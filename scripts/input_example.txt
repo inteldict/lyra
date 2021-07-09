@@ -1,7 +1,8 @@
 ['/home/mheimer/workspace/rust/epos/target/release/epos', '-s', 'VROOT', '-n', '100', '-load', '/opt/parsing_data/evalb/step210523/train.lm', '-t', 'ADV VAFIN-3pis ART-npm NN-npm ADJD KON ADV PTKNEG ADV ADJD $.']
-
+run -- -load /opt/parsing_data/evalb/step27/full.lm  -s VROOT -n 5 -p -a amendments.js  -i Meine Frau will ein Auto und mein Sohn ein Motorrad kaufen
 
 ['/home/mheimer/workspace/rust/epos/target/release/epos', '-s', 'VROOT', '-n', '100', '-load', '/opt/parsing_data/evalb/step210523/train.lm', '-a', '/tmp/tmpz0uf_yer', '-t', 'ADV VAFIN-3pis ART-npm NN-npm ADJD KON ADV PTKNEG ADV ADJD $.']
+
 
 [{"start": 8, "stop": 9, "candidates": ["NX-ON-npm"]}, {"start": 6, "stop": 6, "candidates": ["VF", "ADVX", "ADV"]}, {"start": 6, "stop": 6, "candidates": ["LK-VXFIN-3pis", "VAFIN-3pis", "VXFIN-HD-3pis"]}]
 
