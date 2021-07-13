@@ -14,6 +14,10 @@ use eposlib::lm;
 use rocket::serde::{Deserialize, Serialize};
 use rocket::serde::json::{Json, json, Value};
 use rocket::State;
+use eposlib::cky::ParserOutput;
+use rocket::response::status::NotFound;
+
+
 
 // use rocket::tokio::sync::Mutex;
 
@@ -22,9 +26,12 @@ use rocket::State;
 struct ParserInput {
     start: Option<String>,
     num: usize,
-    words: Vec<String>,
-    tags: Option<Vec<String>>,
+    #[serde(default = "bool::default")]
+    pretty: bool,
+    words: Vec<Box<str>>,
+    tags: Option<Vec<Box<str>>>,
 }
+
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(crate = "rocket::serde")]
@@ -34,18 +41,40 @@ struct ElisionInput {
 }
 
 #[get("/parse", format = "json", data = "<p>")]
-async fn parse(p: Json<ParserInput>, lm: &State<LanguageModel>) -> Option<Json<Vec<String>>> {
-    // let list = list.lock().await;
-
-    // Some(Json(ParserInput {
-    //     start_symbol: p.start_symbol,
-    //     num_trees: p.num_trees,
-    //     words: p.words,
-    //     tags: p.tags,
-    // }))
-    // Some(p)
-    None
+async fn parse(p: Json<ParserInput>, lm: &State<LanguageModel>) -> Result<Json<Vec<ParserOutput>>, NotFound<String>> {
+    match eposlib::parse_standard(&p.words, &p.tags, &lm, p.num, p.pretty) {
+        Ok(parses) => { Ok(Json(parses)) }
+        Err(e) => {
+            Err(NotFound(e))
+        }
+    }
 }
+
+// #[get("/parse", format = "json", data = "<p>")]
+// async fn parse(p: Json<ParserInput>, lm: &State<Arc<LanguageModel>>) -> Result<Json<Vec<ParserOutput>>, NotFound<String>> {
+//     let calc = spawn_blocking(move || eposlib::parse_standard(&p.words, &p.tags, Arc::clone(&lm), p.num, p.pretty))
+//         .await;
+//
+//     match calc {
+//         Ok(parses) => {
+//             match parses {
+//                 Ok(parses) => { Ok(Json(parses)) }
+//                 Err(e) => {
+//                     Err(NotFound(e))
+//                 }
+//             }
+//         }
+//         Err(e) => { Err(NotFound(e.to_string())) }
+//     }
+//
+//     // Ok(Json(parses))
+//     // match parses {
+//     //     Ok(parses) => { Ok(Json(parses)) }
+//     //     Err(e) => {
+//     //         Err(NotFound(e))
+//     //     }
+//     // }
+// }
 
 #[catch(404)]
 fn not_found() -> Value {
@@ -54,7 +83,6 @@ fn not_found() -> Value {
         "reason": "Resource was not found."
     })
 }
-
 
 #[launch]
 fn rocket() -> _ {
