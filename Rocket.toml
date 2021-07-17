@@ -1,0 +1,34 @@
+##[default]
+##address = "127.0.0.1"
+##port = 8000
+##workers = 16
+##keep_alive = 5
+##ident = "Rocket"
+##log_level = "normal"
+##temp_dir = "/tmp"
+##cli_colors = true
+### NOTE: Don't (!) use this key! Generate your own!
+##secret_key = "hPRYyVRiMyxpw5sBB1XeCMN1kFsDCqKvBi2QJxBVHQk="
+#
+### set only when compiled in debug mode, i.e, `cargo build`
+#[debug]
+#port = 8000
+### only the `json` key from `default` will be overridden; `forms` will remain
+#limits = { json = "10MiB" }
+#log_level = "debug"
+#
+##[default.limits]
+##forms = "64 kB"
+##json = "1 MiB"
+##msgpack = "2 MiB"
+##"file/jpg" = "5 MiB"
+##
+##[default.tls]
+##certs = "path/to/cert-chain.pem"
+##key = "path/to/key.pem"
+##
+##[default.shutdown]
+##ctrlc = true
+##signals = ["term", "hup"]
+##grace = 5
+##mercy = 5
