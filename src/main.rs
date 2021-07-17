@@ -4,7 +4,7 @@ extern crate eposlib;
 #[macro_use]
 extern crate rocket;
 
-use std::env;
+use std::{env, io};
 
 use eposlib::config::Amendment;
 use eposlib::config::Config;
@@ -17,6 +17,8 @@ use rocket::serde::json::{Json, json, Value};
 use rocket::State;
 use eposlib::cky::ParserOutput;
 use rocket::response::status::NotFound;
+use std::sync::Arc;
+use rocket::tokio::task::spawn_blocking;
 
 
 // use rocket::tokio::sync::Mutex;
@@ -51,27 +53,53 @@ struct ElisionInput {
 
 
 #[get("/parse", format = "json", data = "<p>")]
-async fn parse(mut p: Json<ParserInput>, lm: &State<LanguageModel>) -> Result<Json<Vec<ParserOutput>>, NotFound<String>> {
+async fn parse(mut p: Json<ParserInput>, lm: &State<Arc<LanguageModel>>) -> Result<Json<Vec<ParserOutput>>, NotFound<String>> {
     // serde_json::to_string(&point).unwrap()
     info!("{}", json!(&*p));
-    match eposlib::parse_standard(p.swap_words(), &p.tags, &lm, p.num, p.pretty) {
+
+    let lm_inner = lm.inner().clone();
+
+    let parses = spawn_blocking(move || eposlib::parse_standard(p.swap_words(), &p.tags, lm_inner, p.num, p.pretty)).await
+        .map_err(|e| io::Error::new(io::ErrorKind::Interrupted, e)).unwrap();
+
+    match parses {
         Ok(parses) => { Ok(Json(parses)) }
         Err(e) => {
             Err(NotFound(e))
         }
     }
+
+    // match eposlib::parse_standard(p.swap_words(), &p.tags, &lm, p.num, p.pretty) {
+    //     Ok(parses) => { Ok(Json(parses)) }
+    //     Err(e) => {
+    //         Err(NotFound(e))
+    //     }
+    // }
 }
 
 #[get("/elision", format = "json", data = "<e>")]
-async fn elision(mut e: Json<ElisionInput>, lm: &State<LanguageModel>) -> Result<Json<Vec<ParserOutput>>, NotFound<String>> {
+async fn elision(mut e: Json<ElisionInput>, lm: &State<Arc<LanguageModel>>) -> Result<Json<Vec<ParserOutput>>, NotFound<String>> {
     info!("{}", json!(&*e));
     // info!("{}", serde_json::to_string_pretty(&*e).unwrap());
-    match eposlib::parse_ellipsis(e.query.swap_words(), &e.query.tags, &lm, e.query.num, e.query.pretty, &e.amendments) {
+
+    let lm_inner = lm.inner().clone();
+
+    let parses = spawn_blocking(move || eposlib::parse_ellipsis(e.query.swap_words(), &e.query.tags, lm_inner, e.query.num, e.query.pretty, &e.amendments)).await
+        .map_err(|e| io::Error::new(io::ErrorKind::Interrupted, e)).unwrap();
+
+    match parses {
         Ok(parses) => { Ok(Json(parses)) }
         Err(e) => {
             Err(NotFound(e))
         }
     }
+
+    // match eposlib::parse_ellipsis(e.query.swap_words(), &e.query.tags, &lm, e.query.num, e.query.pretty, &e.amendments) {
+    //     Ok(parses) => { Ok(Json(parses)) }
+    //     Err(e) => {
+    //         Err(NotFound(e))
+    //     }
+    // }
 }
 
 // #[get("/parse", format = "json", data = "<p>")]
@@ -114,7 +142,7 @@ fn rocket() -> _ {
     // let lm = lm::load_model(&config).unwrap();
 
     rocket::build()
-        .manage(lm::load_model(&config).unwrap())
+        .manage(Arc::new(lm::load_model(&config).unwrap()))
         .mount("/", routes![parse, elision])
         .register("/", catchers![not_found])
     // .launch()
