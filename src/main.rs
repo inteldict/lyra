@@ -77,6 +77,7 @@ async fn parse(mut p: Json<ParserInput>, lm: &State<Arc<LanguageModel>>) -> Resu
     // }
 }
 
+//noinspection RsMainFunctionNotFound
 #[get("/elision", format = "json", data = "<e>")]
 async fn elision(mut e: Json<ElisionInput>, lm: &State<Arc<LanguageModel>>) -> Result<Json<Vec<ParserOutput>>, NotFound<String>> {
     info!("{}", json!(&*e));
@@ -94,7 +95,7 @@ async fn elision(mut e: Json<ElisionInput>, lm: &State<Arc<LanguageModel>>) -> R
         }
     }
 
-    // match eposlib::parse_ellipsis(e.query.swap_words(), &e.query.tags, &lm, e.query.num, e.query.pretty, &e.amendments) {
+    // match eposlib::parse_ellipsis(e.query.swap_words(), &e.query.tags, lm_inner, e.query.num, e.query.pretty, &e.amendments) {
     //     Ok(parses) => { Ok(Json(parses)) }
     //     Err(e) => {
     //         Err(NotFound(e))
