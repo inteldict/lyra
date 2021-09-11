@@ -6,12 +6,11 @@ extern crate rocket;
 
 use std::{env, io};
 
-use eposlib::config::Amendment;
+use eposlib::config::{ElisionInput, ParserInput};
 use eposlib::config::Config;
 use eposlib::lm::LanguageModel;
 // use std::fs::File;
 use eposlib::lm;
-use rocket::serde::{Deserialize, Serialize};
 use rocket::serde::json::{Json, json, Value};
 // use rocket::serde::json::{Json, json, Value, serde_json};
 use rocket::State;
@@ -19,37 +18,6 @@ use eposlib::cky::ParserOutput;
 use rocket::response::status::NotFound;
 use std::sync::Arc;
 use rocket::tokio::task::spawn_blocking;
-
-
-// use rocket::tokio::sync::Mutex;
-
-#[derive(Serialize, Deserialize, Debug)]
-#[serde(crate = "rocket::serde")]
-struct ParserInput {
-    start: Option<String>,
-    num: usize,
-    #[serde(default = "bool::default")]
-    pretty: bool,
-    words: Vec<Box<str>>,
-    tags: Option<Vec<Box<str>>>,
-}
-
-impl ParserInput {
-    fn swap_words(&mut self) -> Vec<Box<str>> {
-        std::mem::replace(&mut self.words, Vec::new())
-    }
-
-    // fn swap_tags(&mut self) -> Option<Vec<Box<str>>> {
-    //     std::mem::replace(&mut self.tags, None)
-    // }
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-#[serde(crate = "rocket::serde")]
-struct ElisionInput {
-    query: ParserInput,
-    amendments: Vec<Amendment>,
-}
 
 
 #[get("/parse", format = "json", data = "<p>")]
