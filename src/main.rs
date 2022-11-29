@@ -53,13 +53,22 @@ async fn elision(mut e: Json<ElisionInput>, lm: &State<Arc<LanguageModel>>) -> R
 
     let lm_inner = lm.inner().clone();
 
-    let parses = spawn_blocking(move || eposlib::parse_ellipsis(e.query.swap_words(), &e.query.tags, lm_inner, e.query.num, e.query.pretty, &e.amendments)).await
-        .map_err(|e| io::Error::new(io::ErrorKind::Interrupted, e)).unwrap();
+    let query_result = spawn_blocking(move || eposlib::parse_ellipsis(e.query.swap_words(), &e.query.tags, lm_inner, e.query.num, e.query.pretty, &e.amendments)).await
+        .map_err(|e| io::Error::new(io::ErrorKind::Interrupted, e));
 
-    match parses {
-        Ok(parses) => { Ok(Json(parses)) }
+    match query_result {
+        Ok(query_parses) => {
+            match query_parses {
+                Ok(parses) => {
+                    Ok(Json(parses))
+                },
+                Err(e) => {
+                    Err(NotFound(e))
+                }
+            }
+        }
         Err(e) => {
-            Err(NotFound(e))
+            Err(NotFound(e.to_string()))
         }
     }
 
