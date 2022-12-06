@@ -5,20 +5,19 @@ extern crate eposlib;
 extern crate rocket;
 
 use std::{env, io};
+use std::sync::Arc;
 
+use eposlib::cky::ParserOutput;
 use eposlib::config::{ElisionInput, ParserInput};
 use eposlib::config::Config;
-use eposlib::lm::LanguageModel;
 // use std::fs::File;
 use eposlib::lm;
+use eposlib::lm::LanguageModel;
+use rocket::response::status::NotFound;
 use rocket::serde::json::{Json, json, Value};
 // use rocket::serde::json::{Json, json, Value, serde_json};
 use rocket::State;
-use eposlib::cky::ParserOutput;
-use rocket::response::status::NotFound;
-use std::sync::Arc;
 use rocket::tokio::task::spawn_blocking;
-
 
 #[get("/parse", format = "json", data = "<p>")]
 async fn parse(mut p: Json<ParserInput>, lm: &State<Arc<LanguageModel>>) -> Result<Json<Vec<ParserOutput>>, NotFound<String>> {
@@ -60,8 +59,9 @@ async fn elision(mut e: Json<ElisionInput>, lm: &State<Arc<LanguageModel>>) -> R
         Ok(query_parses) => {
             match query_parses {
                 Ok(parses) => {
+                    info!("{}", json!(&parses));
                     Ok(Json(parses))
-                },
+                }
                 Err(e) => {
                     Err(NotFound(e))
                 }
