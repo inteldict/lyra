@@ -5,20 +5,19 @@ extern crate eposlib;
 extern crate rocket;
 
 use std::{env, io};
+use std::sync::Arc;
 
+use eposlib::cky::ParserOutput;
 use eposlib::config::{ElisionInput, ParserInput};
 use eposlib::config::Config;
-use eposlib::lm::LanguageModel;
 // use std::fs::File;
 use eposlib::lm;
+use eposlib::lm::LanguageModel;
+use rocket::response::status::NotFound;
 use rocket::serde::json::{Json, json, Value};
 // use rocket::serde::json::{Json, json, Value, serde_json};
 use rocket::State;
-use eposlib::cky::ParserOutput;
-use rocket::response::status::NotFound;
-use std::sync::Arc;
 use rocket::tokio::task::spawn_blocking;
-
 
 #[get("/parse", format = "json", data = "<p>")]
 async fn parse(mut p: Json<ParserInput>, lm: &State<Arc<LanguageModel>>) -> Result<Json<Vec<ParserOutput>>, NotFound<String>> {
@@ -53,13 +52,23 @@ async fn elision(mut e: Json<ElisionInput>, lm: &State<Arc<LanguageModel>>) -> R
 
     let lm_inner = lm.inner().clone();
 
-    let parses = spawn_blocking(move || eposlib::parse_ellipsis(e.query.swap_words(), &e.query.tags, lm_inner, e.query.num, e.query.pretty, &e.amendments)).await
-        .map_err(|e| io::Error::new(io::ErrorKind::Interrupted, e)).unwrap();
+    let query_result = spawn_blocking(move || eposlib::parse_ellipsis(e.query.swap_words(), &e.query.tags, lm_inner, e.query.num, e.query.pretty, &e.amendments)).await
+        .map_err(|e| io::Error::new(io::ErrorKind::Interrupted, e));
 
-    match parses {
-        Ok(parses) => { Ok(Json(parses)) }
+    match query_result {
+        Ok(query_parses) => {
+            match query_parses {
+                Ok(parses) => {
+                    info!("{}", json!(&parses));
+                    Ok(Json(parses))
+                }
+                Err(e) => {
+                    Err(NotFound(e))
+                }
+            }
+        }
         Err(e) => {
-            Err(NotFound(e))
+            Err(NotFound(e.to_string()))
         }
     }
 
