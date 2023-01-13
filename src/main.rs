@@ -59,7 +59,7 @@ async fn elision(mut e: Json<ElisionInput>, lm: &State<Arc<LanguageModel>>) -> R
         Ok(query_parses) => {
             match query_parses {
                 Ok(parses) => {
-                    info!("{}", json!(&parses));
+                    // info!("{}", json!(&parses));
                     Ok(Json(parses))
                 }
                 Err(e) => {
