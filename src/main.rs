@@ -47,8 +47,7 @@ async fn parse(mut p: Json<ParserInput>, lm: &State<Arc<LanguageModel>>) -> Resu
 //noinspection RsMainFunctionNotFound
 #[get("/elision", format = "json", data = "<e>")]
 async fn elision(mut e: Json<ElisionInput>, lm: &State<Arc<LanguageModel>>) -> Result<Json<Vec<ParserOutput>>, NotFound<String>> {
-    // info!("{}", json!(&*e));
-    // info!("{}", serde_json::to_string_pretty(&*e).unwrap());
+    info!("{}", json!(&*e));
 
     let lm_inner = lm.inner().clone();
 
